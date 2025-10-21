@@ -2,61 +2,132 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Пушка и Углы 🎯</title>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #f0f0f0;
-      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    #gameContainer {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
     }
     canvas {
-      border: 2px solid #333;
+      width: 100%;
+      height: auto;
       background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: block;
     }
     .controls {
-      margin-top: 15px;
-      font-size: 18px;
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      width: 100%;
     }
     input {
       font-size: 18px;
-      padding: 5px;
+      padding: 8px 10px;
       width: 100px;
+      text-align: center;
+      border: 2px solid #4a90e2;
+      border-radius: 6px;
+    }
+    button {
+      font-size: 18px;
+      padding: 8px 16px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:active {
+      background: #357abd;
     }
     .info {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 18px;
+      font-weight: bold;
       color: #2a7f2a;
+      text-align: center;
+      width: 100%;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      text-align: center;
+      color: #333;
+    }
+    .instructions {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      width: 100%;
+    }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 20px; }
+      input { font-size: 16px; width: 90px; }
+      button { font-size: 16px; padding: 7px 14px; }
+      .info { font-size: 16px; }
     }
   </style>
 </head>
 <body>
-  <h1>Пушка и Углы 🎯</h1>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="gameContainer">
+    <h1>Пушка и Углы 🎯</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <div class="controls">
-    Угол: <input type="text" id="angleInput" placeholder="0" maxlength="5" />
-    <button id="fireBtn">ОГОНЬ (или Пробел)</button>
+    <div class="controls">
+      <input type="text" id="angleInput" placeholder="0" maxlength="5" inputmode="numeric" />
+      <button id="fireBtn">ОГОНЬ</button>
+    </div>
+    <div class="info" id="angleType">Угол: нулевой</div>
+    <div class="info">Попаданий: <span id="score">0</span></div>
+    <p class="instructions">Положительный угол → против часовой<br>Отрицательный → по часовой</p>
   </div>
-  <div class="info" id="angleType">Угол: нулевой</div>
-  <div class="info">Попаданий: <span id="score">0</span></div>
-  <p>Введи угол (–360…360) и нажми "ОГОНЬ" или пробел.</p>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const angleInput = document.getElementById('angleInput');
-    const fireBtn = document.getElementById('fireBtn');
-    const angleTypeEl = document.getElementById('angleType');
-    const scoreEl = document.getElementById('score');
 
-    // Параметры
-    const CANNON_X = canvas.width / 2;
-    const CANNON_Y = canvas.height / 2;
+    // Адаптация под мобильные устройства
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const displayWidth = Math.min(container.clientWidth, 800);
+      const scale = displayWidth / 800;
+      const displayHeight = 600 * scale;
+
+      // Сохраняем логические координаты 800x600, но рендерим в другом размере
+      canvas.style.width = displayWidth + 'px';
+      canvas.style.height = displayHeight + 'px';
+    }
+
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    // Параметры (логические, не зависят от экрана)
+    const LOGICAL_WIDTH = 800;
+    const LOGICAL_HEIGHT = 600;
+    const CANNON_X = LOGICAL_WIDTH / 2;
+    const CANNON_Y = LOGICAL_HEIGHT / 2;
     const CANNON_RADIUS = 12;
     const BARREL_LENGTH = 80;
     const CIRCLE_RADIUS = 150;
@@ -66,19 +137,19 @@
 
     // Состояние
     let score = 0;
-    let currentAngleDeg = 0;      // целевой угол
-    let barrelAngle = 0;          // текущий угол ствола (анимация)
-    let projectile = null;        // {x, y, vx, vy, dist}
-    let tank = null;              // {x, y}
-    let explosion = null;         // {x, y, timer}
+    let currentAngleDeg = 0;
+    let barrelAngle = 0;
+    let projectile = null;
+    let tank = null;
+    let explosion = null;
     let keys = {};
 
     // Спавн танка
     function spawnTank() {
       let x, y;
       do {
-        x = Math.random() * (canvas.width - 100) + 50;
-        y = Math.random() * (canvas.height - 100) + 50;
+        x = Math.random() * (LOGICAL_WIDTH - 100) + 50;
+        y = Math.random() * (LOGICAL_HEIGHT - 100) + 50;
         const dx = x - CANNON_X;
         const dy = y - CANNON_Y;
         if (Math.hypot(dx, dy) > CIRCLE_RADIUS + 60) {
@@ -100,42 +171,45 @@
       return "выпуклый";
     }
 
-    // Плавное приближение угла
+    // Плавное приближение с учётом направления
     function approach(current, target, step) {
       let diff = target - current;
-      if (diff > 180) diff -= 360;
-      else if (diff < -180) diff += 360;
+      // Нормализуем разницу для кратчайшего пути, но сохраняем направление!
+      // Для отображения дуги мы НЕ нормализуем — рисуем именно от 0 до target
       if (Math.abs(diff) <= step) return target;
       return current + (diff > 0 ? step : -step);
     }
 
-    // Рисование дуги (вручную)
-    function drawAngleArc(ctx, cx, cy, radius, startDeg, endDeg, color) {
-      const start = startDeg;
-      let end = endDeg;
-      if (Math.abs(end - start) > 360) {
-        end = start + (end > start ? 360 : -360);
-      }
-      const step = end >= start ? 2 : -2;
+    // Рисование дуги с учётом знака угла
+    function drawAngleArc(ctx, cx, cy, radius, endDeg, color) {
+      const startDeg = 0;
+      let step;
+      let angle = startDeg;
+
       ctx.beginPath();
-      let angle = start;
-      if (step > 0) {
-        for (; angle <= end; angle += step) {
-          const rad = (angle * Math.PI) / 180;
+
+      if (endDeg >= 0) {
+        // Положительный → против часовой
+        step = 2;
+        for (let a = startDeg; a <= endDeg; a += step) {
+          const rad = (a * Math.PI) / 180;
           const x = cx + radius * Math.cos(rad);
           const y = cy - radius * Math.sin(rad);
-          if (angle === start) ctx.moveTo(x, y);
+          if (a === startDeg) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
       } else {
-        for (; angle >= end; angle += step) {
-          const rad = (angle * Math.PI) / 180;
+        // Отрицательный → по часовой
+        step = -2;
+        for (let a = startDeg; a >= endDeg; a += step) {
+          const rad = (a * Math.PI) / 180;
           const x = cx + radius * Math.cos(rad);
           const y = cy - radius * Math.sin(rad);
-          if (angle === start) ctx.moveTo(x, y);
+          if (a === startDeg) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
       }
+
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.stroke();
@@ -143,10 +217,8 @@
 
     // Обновление
     function update() {
-      // Анимация ствола
       barrelAngle = approach(barrelAngle, currentAngleDeg, 5);
 
-      // Обновление снаряда
       if (projectile) {
         projectile.x += projectile.vx;
         projectile.y += projectile.vy;
@@ -155,9 +227,9 @@
         if (
           projectile.dist > 1000 ||
           projectile.x < 0 ||
-          projectile.x > canvas.width ||
+          projectile.x > LOGICAL_WIDTH ||
           projectile.y < 0 ||
-          projectile.y > canvas.height
+          projectile.y > LOGICAL_HEIGHT
         ) {
           projectile = null;
         } else if (tank) {
@@ -169,7 +241,7 @@
           ) {
             explosion = {x: projectile.x, y: projectile.y, timer: 25};
             score++;
-            scoreEl.textContent = score;
+            document.getElementById('score').textContent = score;
             projectile = null;
             spawnTank();
           }
@@ -181,7 +253,6 @@
         if (explosion.timer <= 0) explosion = null;
       }
 
-      // Обработка выстрела по пробелу
       if (keys[' ']) {
         keys[' '] = false;
         const rad = (barrelAngle * Math.PI) / 180;
@@ -196,121 +267,172 @@
       }
     }
 
+    // Масштабирование координат при рисовании
+    function toDisplay(x, y) {
+      const scale = canvas.clientWidth / LOGICAL_WIDTH;
+      return [x * scale, y * scale];
+    }
+
     // Отрисовка
     function draw() {
+      const scale = canvas.clientWidth / LOGICAL_WIDTH;
+      canvas.width = canvas.clientWidth;
+      canvas.height = LOGICAL_HEIGHT * scale;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Преобразуем логические координаты в экранные
+      const [cx, cy] = toDisplay(CANNON_X, CANNON_Y);
+      const circleR = CIRCLE_RADIUS * scale;
+      const indicatorR = ANGLE_INDICATOR_RADIUS * scale;
+      const cannonR = CANNON_RADIUS * scale;
+      const barrelL = BARREL_LENGTH * scale;
+      const tankW = TANK_WIDTH * scale;
+      const tankH = TANK_HEIGHT * scale;
 
       // Основная окружность
       ctx.beginPath();
-      ctx.arc(CANNON_X, CANNON_Y, CIRCLE_RADIUS, 0, Math.PI * 2);
+      ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
       ctx.strokeStyle = '#999';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * scale;
       ctx.stroke();
 
       // Риски каждые 10 градусов
       for (let deg = 0; deg < 360; deg += 10) {
         const rad = (deg * Math.PI) / 180;
         const isMajor = deg % 45 === 0;
-        const len = isMajor ? 12 : 6;
-        const x1 = CANNON_X + (CIRCLE_RADIUS - len) * Math.cos(rad);
-        const y1 = CANNON_Y - (CIRCLE_RADIUS - len) * Math.sin(rad);
-        const x2 = CANNON_X + CIRCLE_RADIUS * Math.cos(rad);
-        const y2 = CANNON_Y - CIRCLE_RADIUS * Math.sin(rad);
+        const len = (isMajor ? 12 : 6) * scale;
+        const x1 = cx + (circleR - len) * Math.cos(rad);
+        const y1 = cy - (circleR - len) * Math.sin(rad);
+        const x2 = cx + circleR * Math.cos(rad);
+        const y2 = cy - circleR * Math.sin(rad);
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.strokeStyle = isMajor ? '#555' : '#999';
-        ctx.lineWidth = isMajor ? 2 : 1;
+        ctx.lineWidth = (isMajor ? 2 : 1) * scale;
         ctx.stroke();
       }
 
       // Подписи основных углов
       const labels = [[0, "0°"], [90, "90°"], [180, "180°"], [270, "270°"]];
       ctx.fillStyle = 'black';
-      ctx.font = '16px Arial';
+      ctx.font = `${16 * scale}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       labels.forEach(([deg, txt]) => {
         const rad = (deg * Math.PI) / 180;
-        const x = CANNON_X + (CIRCLE_RADIUS + 15) * Math.cos(rad);
-        const y = CANNON_Y - (CIRCLE_RADIUS + 15) * Math.sin(rad);
+        const x = cx + (circleR + 15 * scale) * Math.cos(rad);
+        const y = cy - (circleR + 15 * scale) * Math.sin(rad);
         ctx.fillText(txt, x, y);
       });
 
-      // Дуга угла
-      drawAngleArc(ctx, CANNON_X, CANNON_Y, ANGLE_INDICATOR_RADIUS, 0, barrelAngle, 'blue');
+      // Дуга угла (с учётом знака!)
+      drawAngleArcAdaptive(ctx, cx, cy, indicatorR, barrelAngle, 'blue', scale);
 
       // Подпись угла
-      const bisector = barrelAngle / 2;
-      const labelDist = ANGLE_INDICATOR_RADIUS + 15;
-      const labelX = CANNON_X + labelDist * Math.cos((bisector * Math.PI) / 180);
-      const labelY = CANNON_Y - labelDist * Math.sin((bisector * Math.PI) / 180);
-      ctx.font = '20px Arial';
+      const bisector = barrelAngle >= 0 ? barrelAngle / 2 : barrelAngle / 2;
+      const labelDist = (ANGLE_INDICATOR_RADIUS + 15) * scale;
+      const labelX = cx + labelDist * Math.cos((bisector * Math.PI) / 180);
+      const labelY = cy - labelDist * Math.sin((bisector * Math.PI) / 180);
+      ctx.font = `${20 * scale}px Arial`;
       ctx.fillStyle = 'blue';
       ctx.fillText(`${Math.round(barrelAngle)}°`, labelX, labelY);
 
       // Точка прицела
       const aimRad = (barrelAngle * Math.PI) / 180;
-      const aimX = CANNON_X + CIRCLE_RADIUS * Math.cos(aimRad);
-      const aimY = CANNON_Y - CIRCLE_RADIUS * Math.sin(aimRad);
+      const aimX = cx + circleR * Math.cos(aimRad);
+      const aimY = cy - circleR * Math.sin(aimRad);
       ctx.beginPath();
-      ctx.arc(aimX, aimY, 8, 0, Math.PI * 2);
+      ctx.arc(aimX, aimY, 8 * scale, 0, Math.PI * 2);
       ctx.fillStyle = 'blue';
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(aimX, aimY, 4, 0, Math.PI * 2);
+      ctx.arc(aimX, aimY, 4 * scale, 0, Math.PI * 2);
       ctx.fillStyle = 'white';
       ctx.fill();
 
       // Пушка
       ctx.beginPath();
-      ctx.arc(CANNON_X, CANNON_Y, CANNON_RADIUS, 0, Math.PI * 2);
+      ctx.arc(cx, cy, cannonR, 0, Math.PI * 2);
       ctx.fillStyle = 'black';
       ctx.fill();
 
-      const barrelEndX = CANNON_X + BARREL_LENGTH * Math.cos(aimRad);
-      const barrelEndY = CANNON_Y - BARREL_LENGTH * Math.sin(aimRad);
+      const barrelEndX = cx + barrelL * Math.cos(aimRad);
+      const barrelEndY = cy - barrelL * Math.sin(aimRad);
       ctx.beginPath();
-      ctx.moveTo(CANNON_X, CANNON_Y);
+      ctx.moveTo(cx, cy);
       ctx.lineTo(barrelEndX, barrelEndY);
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 8 * scale;
       ctx.stroke();
 
       // Танк
       if (tank) {
+        const [tx, ty] = toDisplay(tank.x, tank.y);
         ctx.fillStyle = 'red';
-        ctx.fillRect(tank.x, tank.y, TANK_WIDTH, TANK_HEIGHT);
+        ctx.fillRect(tx, ty, tankW, tankH);
         ctx.fillStyle = '#b43c3c';
-        ctx.fillRect(tank.x + 15, tank.y - 10, 20, 15);
+        ctx.fillRect(tx + 15 * scale, ty - 10 * scale, 20 * scale, 15 * scale);
       }
 
       // Снаряд
       if (projectile) {
+        const [px, py] = toDisplay(projectile.x, projectile.y);
         ctx.beginPath();
-        ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+        ctx.arc(px, py, 5 * scale, 0, Math.PI * 2);
         ctx.fillStyle = 'blue';
         ctx.fill();
       }
 
       // Взрыв
       if (explosion) {
-        const radius = Math.max(5, 30 - explosion.timer);
+        const [ex, ey] = toDisplay(explosion.x, explosion.y);
+        const radius = Math.max(5, 30 - explosion.timer) * scale;
         ctx.beginPath();
-        ctx.arc(explosion.x, explosion.y, radius, 0, Math.PI * 2);
+        ctx.arc(ex, ey, radius, 0, Math.PI * 2);
         ctx.fillStyle = 'orange';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(explosion.x, explosion.y, Math.max(2, radius / 2), 0, Math.PI * 2);
+        ctx.arc(ex, ey, Math.max(2, radius / 2), 0, Math.PI * 2);
         ctx.fillStyle = 'yellow';
         ctx.fill();
       }
 
       // Тип угла
-      angleTypeEl.textContent = `Угол: ${getAngleType(barrelAngle)}`;
+      document.getElementById('angleType').textContent = `Угол: ${getAngleType(barrelAngle)}`;
     }
 
-    // Обработчики ввода
+    // Адаптивная дуга
+    function drawAngleArcAdaptive(ctx, cx, cy, radius, endDeg, color, scale) {
+      const startDeg = 0;
+      ctx.beginPath();
+
+      if (endDeg >= 0) {
+        for (let a = startDeg; a <= endDeg; a += 2) {
+          const rad = (a * Math.PI) / 180;
+          const x = cx + radius * Math.cos(rad);
+          const y = cy - radius * Math.sin(rad);
+          if (a === startDeg) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+      } else {
+        for (let a = startDeg; a >= endDeg; a -= 2) {
+          const rad = (a * Math.PI) / 180;
+          const x = cx + radius * Math.cos(rad);
+          const y = cy - radius * Math.sin(rad);
+          if (a === startDeg) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3 * scale;
+      ctx.stroke();
+    }
+
+    // Обработчики
+    const angleInput = document.getElementById('angleInput');
     angleInput.addEventListener('input', () => {
       const val = angleInput.value.trim();
       if (val === '' || val === '+' || val === '-') return;
@@ -320,7 +442,7 @@
       }
     });
 
-    fireBtn.addEventListener('click', () => {
+    document.getElementById('fireBtn').addEventListener('click', () => {
       const rad = (barrelAngle * Math.PI) / 180;
       const speed = 8;
       projectile = {
