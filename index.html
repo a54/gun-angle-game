@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <!-- Скажем браузеру: мы поддерживаем обе темы, но по умолчанию — тёмная -->
   <meta name="color-scheme" content="dark light">
   <title>Пушка и Углы 🎯</title>
   <style>
@@ -116,9 +115,6 @@
   </div>
 
   <script>
-    // ... (весь JS-код остаётся БЕЗ ИЗМЕНЕНИЙ!)
-    // Только в draw() заменим цвета для тёмной темы:
-
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -281,14 +277,66 @@
       const tankW = TANK_WIDTH * scale;
       const tankH = TANK_HEIGHT * scale;
 
-      // Основная окружность
+      // === ОСИ КООРДИНАТ ===
+      const axisLength = (CIRCLE_RADIUS + 30) * scale;
+      const axisWidth = 2 * scale;
+      const arrowSize = 8 * scale;
+
+      // Ось X (горизонтальная, синяя)
+      ctx.beginPath();
+      ctx.moveTo(cx - axisLength, cy);
+      ctx.lineTo(cx + axisLength, cy);
+      ctx.strokeStyle = '#4fc3f7';
+      ctx.lineWidth = axisWidth;
+      ctx.stroke();
+
+      // Стрелка оси X
+      ctx.beginPath();
+      ctx.moveTo(cx + axisLength, cy);
+      ctx.lineTo(cx + axisLength - arrowSize, cy - arrowSize/2);
+      ctx.lineTo(cx + axisLength - arrowSize, cy + arrowSize/2);
+      ctx.closePath();
+      ctx.fillStyle = '#4fc3f7';
+      ctx.fill();
+
+      // Подпись X
+      ctx.fillStyle = '#4fc3f7';
+      ctx.font = `${16 * scale}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('X', cx + axisLength + 5 * scale, cy);
+
+      // Ось Y (вертикальная, красная)
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + axisLength);
+      ctx.lineTo(cx, cy - axisLength);
+      ctx.strokeStyle = '#ff6b6b';
+      ctx.lineWidth = axisWidth;
+      ctx.stroke();
+
+      // Стрелка оси Y
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - axisLength);
+      ctx.lineTo(cx - arrowSize/2, cy - axisLength + arrowSize);
+      ctx.lineTo(cx + arrowSize/2, cy - axisLength + arrowSize);
+      ctx.closePath();
+      ctx.fillStyle = '#ff6b6b';
+      ctx.fill();
+
+      // Подпись Y
+      ctx.fillStyle = '#ff6b6b';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Y', cx, cy - axisLength - 5 * scale);
+
+      // === Основная окружность ===
       ctx.beginPath();
       ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
       ctx.strokeStyle = '#444444';
       ctx.lineWidth = 2 * scale;
       ctx.stroke();
 
-      // Риски
+      // Риски каждые 10 градусов
       for (let deg = 0; deg < 360; deg += 10) {
         const rad = (deg * Math.PI) / 180;
         const isMajor = deg % 45 === 0;
@@ -305,7 +353,7 @@
         ctx.stroke();
       }
 
-      // Подписи углов
+      // Подписи основных углов
       const labels = [[0, "0°"], [90, "90°"], [180, "180°"], [270, "270°"]];
       ctx.fillStyle = '#90caf9';
       ctx.font = `${16 * scale}px Arial`;
