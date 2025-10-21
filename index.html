@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <!-- Скажем браузеру: мы поддерживаем обе темы, но по умолчанию — тёмная -->
+  <meta name="color-scheme" content="dark light">
   <title>Пушка и Углы 🎯</title>
   <style>
     * {
@@ -10,15 +12,20 @@
       margin: 0;
       padding: 0;
     }
+    html {
+      background: #121212;
+      color-scheme: dark;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: white; /* 🔲 ЯВНО белый фон */
-      color: #000;       /* 🔲 Тёмный текст */
+      background: #121212;
+      color: #ffffff;
       padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
       overflow: hidden;
+      min-height: 100vh;
     }
     #gameContainer {
       width: 100%;
@@ -28,9 +35,9 @@
     canvas {
       width: 100%;
       height: auto;
-      background: white;
+      background: #1e1e1e;
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       display: block;
     }
     .controls {
@@ -46,28 +53,28 @@
       padding: 8px 10px;
       width: 100px;
       text-align: center;
-      border: 2px solid #4a90e2;
+      border: 2px solid #5c9fff;
       border-radius: 6px;
-      background: white;
-      color: #000;
+      background: #2d2d2d;
+      color: white;
     }
     button {
       font-size: 18px;
       padding: 8px 16px;
-      background: #4a90e2;
+      background: #5c9fff;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
     button:active {
-      background: #357abd;
+      background: #3a7bdd;
     }
     .info {
       margin-top: 8px;
       font-size: 18px;
       font-weight: bold;
-      color: #2a7f2a; /* зелёный для счёта и типа угла */
+      color: #81c784;
       text-align: center;
       width: 100%;
     }
@@ -75,12 +82,12 @@
       font-size: 24px;
       margin-bottom: 12px;
       text-align: center;
-      color: #000;
+      color: #ffffff;
     }
     .instructions {
       margin-top: 8px;
       font-size: 14px;
-      color: #555;
+      color: #bbbbbb;
       text-align: center;
       width: 100%;
     }
@@ -109,6 +116,9 @@
   </div>
 
   <script>
+    // ... (весь JS-код остаётся БЕЗ ИЗМЕНЕНИЙ!)
+    // Только в draw() заменим цвета для тёмной темы:
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -124,7 +134,6 @@
     window.addEventListener('load', resizeCanvas);
     window.addEventListener('resize', resizeCanvas);
 
-    // Параметры
     const LOGICAL_WIDTH = 800;
     const LOGICAL_HEIGHT = 600;
     const CANNON_X = LOGICAL_WIDTH / 2;
@@ -158,11 +167,9 @@
       } while (true);
     }
 
-    // ✅ ИСПРАВЛЕННАЯ КЛАССИФИКАЦИЯ УГЛОВ
     function getAngleType(angleDeg) {
       let a = angleDeg % 360;
       if (a < 0) a += 360;
-
       if (a === 0) return "нулевой";
       if (a > 0 && a < 90) return "острый";
       if (a === 90) return "прямой";
@@ -181,7 +188,6 @@
     function drawAngleArcAdaptive(ctx, cx, cy, radius, endDeg, color, scale) {
       const startDeg = 0;
       ctx.beginPath();
-
       if (endDeg >= 0) {
         for (let a = startDeg; a <= endDeg; a += 2) {
           const rad = (a * Math.PI) / 180;
@@ -199,7 +205,6 @@
           else ctx.lineTo(x, y);
         }
       }
-
       ctx.strokeStyle = color;
       ctx.lineWidth = 3 * scale;
       ctx.stroke();
@@ -279,7 +284,7 @@
       // Основная окружность
       ctx.beginPath();
       ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
-      ctx.strokeStyle = '#999';
+      ctx.strokeStyle = '#444444';
       ctx.lineWidth = 2 * scale;
       ctx.stroke();
 
@@ -295,14 +300,14 @@
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
-        ctx.strokeStyle = isMajor ? '#555' : '#999';
+        ctx.strokeStyle = isMajor ? '#666666' : '#444444';
         ctx.lineWidth = (isMajor ? 2 : 1) * scale;
         ctx.stroke();
       }
 
       // Подписи углов
       const labels = [[0, "0°"], [90, "90°"], [180, "180°"], [270, "270°"]];
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#90caf9';
       ctx.font = `${16 * scale}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -314,7 +319,7 @@
       });
 
       // Дуга угла
-      drawAngleArcAdaptive(ctx, cx, cy, indicatorR, barrelAngle, 'blue', scale);
+      drawAngleArcAdaptive(ctx, cx, cy, indicatorR, barrelAngle, '#4fc3f7', scale);
 
       // Подпись угла
       const bisector = barrelAngle / 2;
@@ -322,7 +327,7 @@
       const labelX = cx + labelDist * Math.cos((bisector * Math.PI) / 180);
       const labelY = cy - labelDist * Math.sin((bisector * Math.PI) / 180);
       ctx.font = `${20 * scale}px Arial`;
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = '#4fc3f7';
       ctx.fillText(`${Math.round(barrelAngle)}°`, labelX, labelY);
 
       // Точка прицела
@@ -331,62 +336,62 @@
       const aimY = cy - circleR * Math.sin(aimRad);
       ctx.beginPath();
       ctx.arc(aimX, aimY, 8 * scale, 0, Math.PI * 2);
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = '#4fc3f7';
       ctx.fill();
       ctx.beginPath();
       ctx.arc(aimX, aimY, 4 * scale, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = '#121212';
       ctx.fill();
 
       // Пушка
       ctx.beginPath();
       ctx.arc(cx, cy, cannonR, 0, Math.PI * 2);
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#eeeeee';
       ctx.fill();
       const barrelEndX = cx + barrelL * Math.cos(aimRad);
       const barrelEndY = cy - barrelL * Math.sin(aimRad);
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(barrelEndX, barrelEndY);
-      ctx.strokeStyle = '#000';
+      ctx.strokeStyle = '#eeeeee';
       ctx.lineWidth = 8 * scale;
       ctx.stroke();
 
       // Танк
       if (tank) {
         const [tx, ty] = toDisplay(tank.x, tank.y);
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = '#ff6b6b';
         ctx.fillRect(tx, ty, tankW, tankH);
-        ctx.fillStyle = '#b43c3c';
+        ctx.fillStyle = '#ff4d4d';
         ctx.fillRect(tx + 15 * scale, ty - 10 * scale, 20 * scale, 15 * scale);
       }
 
-      // Снаряд и взрыв
+      // Снаряд
       if (projectile) {
         const [px, py] = toDisplay(projectile.x, projectile.y);
         ctx.beginPath();
         ctx.arc(px, py, 5 * scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'blue';
+        ctx.fillStyle = '#4fc3f7';
         ctx.fill();
       }
+
+      // Взрыв
       if (explosion) {
         const [ex, ey] = toDisplay(explosion.x, explosion.y);
         const radius = Math.max(5, 30 - explosion.timer) * scale;
         ctx.beginPath();
         ctx.arc(ex, ey, radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'orange';
+        ctx.fillStyle = '#ff9800';
         ctx.fill();
         ctx.beginPath();
         ctx.arc(ex, ey, Math.max(2, radius / 2), 0, Math.PI * 2);
-        ctx.fillStyle = 'yellow';
+        ctx.fillStyle = '#ffeb3b';
         ctx.fill();
       }
 
-      // Тип угла
       document.getElementById('angleType').textContent = `Угол: ${getAngleType(barrelAngle)}`;
     }
 
-    // Обработчики
     const angleInput = document.getElementById('angleInput');
     angleInput.addEventListener('input', () => {
       const val = angleInput.value.trim();
