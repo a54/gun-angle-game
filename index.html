@@ -266,9 +266,9 @@
       const scale = canvas.clientWidth / LOGICAL_WIDTH;
       canvas.width = canvas.clientWidth;
       canvas.height = LOGICAL_HEIGHT * scale;
-
+    
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    
       const [cx, cy] = toDisplay(CANNON_X, CANNON_Y);
       const circleR = CIRCLE_RADIUS * scale;
       const indicatorR = ANGLE_INDICATOR_RADIUS * scale;
@@ -276,59 +276,19 @@
       const barrelL = BARREL_LENGTH * scale;
       const tankW = TANK_WIDTH * scale;
       const tankH = TANK_HEIGHT * scale;
-
-      // === ОСИ КООРДИНАТ ===
-      const axisLength = (CIRCLE_RADIUS + 30) * scale;
-      const axisWidth = 2 * scale;
-      const arrowSize = 8 * scale;
-
-      // Ось X (горизонтальная, синяя)
+    
+      // === Линии осей В ПРЕДЕЛАХ ОКРУЖНОСТИ ===
       ctx.beginPath();
-      ctx.moveTo(cx - axisLength, cy);
-      ctx.lineTo(cx + axisLength, cy);
-      ctx.strokeStyle = '#4fc3f7';
-      ctx.lineWidth = axisWidth;
+      // Горизонталь: 0° — 180°
+      ctx.moveTo(cx - circleR, cy);
+      ctx.lineTo(cx + circleR, cy);
+      // Вертикаль: 90° — 270°
+      ctx.moveTo(cx, cy - circleR);
+      ctx.lineTo(cx, cy + circleR);
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 1.5 * scale;
       ctx.stroke();
-
-      // Стрелка оси X
-      ctx.beginPath();
-      ctx.moveTo(cx + axisLength, cy);
-      ctx.lineTo(cx + axisLength - arrowSize, cy - arrowSize/2);
-      ctx.lineTo(cx + axisLength - arrowSize, cy + arrowSize/2);
-      ctx.closePath();
-      ctx.fillStyle = '#4fc3f7';
-      ctx.fill();
-
-      // Подпись X
-      ctx.fillStyle = '#4fc3f7';
-      ctx.font = `${16 * scale}px Arial`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('X', cx + axisLength + 5 * scale, cy);
-
-      // Ось Y (вертикальная, красная)
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + axisLength);
-      ctx.lineTo(cx, cy - axisLength);
-      ctx.strokeStyle = '#ff6b6b';
-      ctx.lineWidth = axisWidth;
-      ctx.stroke();
-
-      // Стрелка оси Y
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - axisLength);
-      ctx.lineTo(cx - arrowSize/2, cy - axisLength + arrowSize);
-      ctx.lineTo(cx + arrowSize/2, cy - axisLength + arrowSize);
-      ctx.closePath();
-      ctx.fillStyle = '#ff6b6b';
-      ctx.fill();
-
-      // Подпись Y
-      ctx.fillStyle = '#ff6b6b';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('Y', cx, cy - axisLength - 5 * scale);
-
+    
       // === Основная окружность ===
       ctx.beginPath();
       ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
